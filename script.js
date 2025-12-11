@@ -1,22 +1,43 @@
 async function getWeather() {
-    const cityName = document.getElementById("city").value;
+    const citiesInput = document.getElementById('city').value;
+    const resultEl = document.getElementById('result');
 
-    // 1) Geocoding API
-    const geoRes = await fetch(`https://geocoding-api.open-meteo.com/v1/search?name=${cityName}`);
-    const geoData = await geoRes.json();
-
-    if (!geoData.results) {
-        document.getElementById("result").textContent = "Şehir bulunamadı.";
+    if (!citiesInput) {
+        resultEl.textContent = "Lütfen en az bir şehir adı girin.";
         return;
     }
 
-    const { latitude, longitude } = geoData.results[0];
+    // Şehirleri virgül ile ayır
+    const cities = citiesInput.split(',').map(c => c.trim()).filter(c => c.length > 0);
 
-    // 2) Weather API
-    const weatherRes = await fetch(
-        `https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&current_weather=true`
-    );
-    const weatherData = await weatherRes.json();
+    let finalResult = "";
 
-    document.getElementById("result").textContent = JSON.stringify(weatherData, null, 2);
+    for (let city of cities) {
+        try {
+            // 1. Şehir koordinatlarını al
+            const geoResponse = await fetch(`https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(city)}`);
+            const geoData = await geoResponse.json();
+
+            if (!geoData.results || geoData.results.length === 0) {
+                finalResult += `${city}: Şehir bulunamadı.\n\n`;
+                continue;
+            }
+
+            const { latitude, longitude, name } = geoData.results[0];
+
+            // 2. Hava durumunu al
+            const weatherResponse = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&current_weather=true`);
+            const weatherData = await weatherResponse.json();
+
+            const temp = weatherData.current_weather.temperature;
+            const wind = weatherData.current_weather.windspeed;
+            finalResult += `Şehir: ${name}\nSıcaklık: ${temp}°C\nRüzgar Hızı: ${wind} km/h\n\n`;
+
+        } catch (error) {
+            console.error(error);
+            finalResult += `${city}: Hava durumu alınamadı.\n\n`;
+        }
+    }
+
+    resultEl.textContent = finalResult;
 }
