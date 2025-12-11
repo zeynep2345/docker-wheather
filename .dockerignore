@@ -1,0 +1,16 @@
+# Node veya paket dosyaları (varsa)
+node_modules
+npm-debug.log
+yarn-error.log
+
+# Git ve versiyon kontrol dosyaları
+.git
+.gitignore
+
+# Sistem dosyaları
+.DS_Store
+Thumbs.db
+
+# Log veya geçici dosyalar
+*.log
+*.tmp
